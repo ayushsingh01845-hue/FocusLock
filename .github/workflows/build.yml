@@ -27,8 +27,11 @@ jobs:
             gradle wrapper --gradle-version 8.7
           fi
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
+      - name: Point Gradle to the runner's preinstalled Android SDK
+        run: echo "sdk.dir=$ANDROID_HOME" > local.properties
+
+      - name: Accept SDK licenses (just in case)
+        run: yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
 
       - name: Build debug APK
         run: ./gradlew assembleDebug --no-daemon
