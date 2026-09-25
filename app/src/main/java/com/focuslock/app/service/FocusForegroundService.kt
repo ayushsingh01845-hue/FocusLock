@@ -22,15 +22,9 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import java.util.UUID
 
-/**
- * Keeps the focus timer running even if the app is minimized or the screen locks, and shows the
- * required persistent notification while a session is active. This is a plain foreground
- * service (not a background restriction bypass) - the notification is always visible while it
- * runs, exactly as Android requires.
- */
 class FocusForegroundService : Service() {
 
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private lateinit var prefs: PreferencesManager
     private var timer: CountDownTimer? = null
 
@@ -75,7 +69,6 @@ class FocusForegroundService : Service() {
 
     private suspend fun handleSegmentFinished(session: ActiveSession) {
         if (session.isPomodoro && !session.isBreak) {
-            // Focus segment done -> start a break, apps become available during it.
             val breakSession = session.copy(
                 startTimeMillis = System.currentTimeMillis(),
                 endTimeMillis = System.currentTimeMillis() + session.pomodoroBreakMinutes * 60_000L,
@@ -85,7 +78,6 @@ class FocusForegroundService : Service() {
             notifyOnce("Break time", "Focus segment complete. Enjoy a ${session.pomodoroBreakMinutes} min break.")
             scheduleTimer(breakSession)
         } else if (session.isPomodoro && session.isBreak) {
-            // Break done -> start next focus segment automatically.
             val nextFocus = session.copy(
                 startTimeMillis = System.currentTimeMillis(),
                 endTimeMillis = System.currentTimeMillis() + session.pomodoroFocusMinutes * 60_000L,
