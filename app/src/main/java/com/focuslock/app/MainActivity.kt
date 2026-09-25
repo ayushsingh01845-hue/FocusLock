@@ -5,11 +5,15 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
@@ -21,6 +25,7 @@ import com.focuslock.app.ui.FocusViewModel
 import com.focuslock.app.ui.navigation.FocusLockNavGraph
 import com.focuslock.app.ui.navigation.Screen
 import com.focuslock.app.ui.theme.FocusLockTheme
+import java.io.File
 
 class MainActivity : ComponentActivity() {
 
@@ -28,6 +33,21 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        val crashFile = File(filesDir, "last_crash.txt")
+        if (crashFile.exists()) {
+            val crashText = runCatching { crashFile.readText() }.getOrDefault("(could not read crash log)")
+            setContent {
+                FocusLockTheme {
+                    CrashLogScreen(crashText = crashText, onDismiss = {
+                        crashFile.delete()
+                        recreate()
+                    })
+                }
+            }
+            return
+        }
+
         setContent {
             val settings by viewModel.settings.collectAsState()
             val darkTheme = when (settings.theme) {
@@ -38,6 +58,37 @@ class MainActivity : ComponentActivity() {
             FocusLockTheme(darkTheme = darkTheme) {
                 FocusLockApp(viewModel)
             }
+        }
+    }
+}
+
+@Composable
+private fun CrashLogScreen(crashText: String, onDismiss: () -> Unit) {
+    Column(
+        Modifier
+            .fillMaxSize()
+            .padding(20.dp)
+    ) {
+        Text("FocusLock crashed last time", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+        Spacer(Modifier.height(8.dp))
+        Text(
+            "Here's the error - screenshot this and send it over.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Spacer(Modifier.height(16.dp))
+        Card(modifier = Modifier.weight(1f).fillMaxWidth()) {
+            Text(
+                crashText,
+                modifier = Modifier
+                    .padding(12.dp)
+                    .verticalScroll(rememberScrollState()),
+                style = MaterialTheme.typography.bodySmall
+            )
+        }
+        Spacer(Modifier.height(16.dp))
+        Button(onClick = onDismiss, modifier = Modifier.fillMaxWidth()) {
+            Text("Clear and continue")
         }
     }
 }
