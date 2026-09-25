@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">FocusLock</string>
+    <string name="accessibility_service_description">FocusLock uses this to detect when you open an app you asked to have blocked during a focus session, so it can show the block screen.</string>
+</resources>
