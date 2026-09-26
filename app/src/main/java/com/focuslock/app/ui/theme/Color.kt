@@ -14,16 +14,15 @@ val AccentRed = Color(0xFFEF5B5B)
 val TextSecondaryLight = Color(0xFF6B6B78)
 val TextSecondaryDark = Color(0xFFA0A0AD)
 
-// Premium glass-morphism palette
-val GradientTopLight = Color(0xFFEDEAFF)
-val GradientMidLight = Color(0xFFF5F3FF)
-val GradientBottomLight = Color(0xFFFFFFFF)
+// Neon dark palette
+val NeonViolet = Color(0xFFA855F7)
+val NeonCyan = Color(0xFF22D3EE)
+val NeonPink = Color(0xFFFF4D9D)
 
-val GradientTopDark = Color(0xFF201F3D)
-val GradientMidDark = Color(0xFF16162A)
-val GradientBottomDark = Color(0xFF0E0E1A)
+val NeonBgTop = Color(0xFF15102A)
+val NeonBgMid = Color(0xFF0B0A17)
+val NeonBgBottom = Color(0xFF030308)
 
-val GlassSurfaceLight = Color(0xCCFFFFFF)
-val GlassSurfaceVariantLight = Color(0x99FFFFFF)
-val GlassSurfaceDark = Color(0x33FFFFFF)
-val GlassSurfaceVariantDark = Color(0x1FFFFFFF)
+val NeonGlassSurface = Color(0x1FFFFFFF)
+val NeonGlassSurfaceVariant = Color(0x14FFFFFF)
+val NeonBorder = Color(0x55A855F7)
