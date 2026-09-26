@@ -10,30 +10,38 @@ import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
-import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
 private val LightColors = lightColorScheme(
     primary = Indigo40,
-    onPrimary = Color2(0xFFFFFFFF),
+    onPrimary = Color.White,
     secondary = IndigoDark,
-    background = BgLight,
-    surface = SurfaceLight,
+    background = Color.Transparent,
+    surface = GlassSurfaceLight,
+    surfaceVariant = GlassSurfaceVariantLight,
     error = AccentRed
 )
 
 private val DarkColors = darkColorScheme(
     primary = Indigo80,
-    onPrimary = Color2(0xFF17171F),
+    onPrimary = Color(0xFF17171F),
     secondary = Indigo40,
-    background = BgDark,
-    surface = SurfaceDark,
+    background = Color.Transparent,
+    surface = GlassSurfaceDark,
+    surfaceVariant = GlassSurfaceVariantDark,
     error = AccentRed
 )
 
-private fun Color2(value: Long) = androidx.compose.ui.graphics.Color(value)
+/** The soft, premium gradient that sits behind every screen in the app. */
+fun focusLockBackgroundBrush(darkTheme: Boolean): Brush = if (darkTheme) {
+    Brush.verticalGradient(listOf(GradientTopDark, GradientMidDark, GradientBottomDark))
+} else {
+    Brush.verticalGradient(listOf(GradientTopLight, GradientMidLight, GradientBottomLight))
+}
 
 @Composable
 fun FocusLockTheme(
