@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -26,6 +27,7 @@ import com.focuslock.app.ui.FocusViewModel
 import com.focuslock.app.ui.navigation.FocusLockNavGraph
 import com.focuslock.app.ui.navigation.Screen
 import com.focuslock.app.ui.theme.FocusLockTheme
+import com.focuslock.app.ui.theme.focusLockBackgroundBrush
 import java.io.File
 
 class MainActivity : ComponentActivity() {
@@ -57,7 +59,7 @@ class MainActivity : ComponentActivity() {
                 AppTheme.SYSTEM -> androidx.compose.foundation.isSystemInDarkTheme()
             }
             FocusLockTheme(darkTheme = darkTheme) {
-                FocusLockApp(viewModel)
+                FocusLockApp(viewModel, darkTheme)
             }
         }
     }
@@ -97,7 +99,7 @@ private fun CrashLogScreen(crashText: String, onDismiss: () -> Unit) {
 private data class BottomItem(val screen: Screen, val label: String, val icon: androidx.compose.ui.graphics.vector.ImageVector)
 
 @Composable
-fun FocusLockApp(viewModel: FocusViewModel) {
+fun FocusLockApp(viewModel: FocusViewModel, darkTheme: Boolean) {
     val navController = rememberNavController()
     val items = listOf(
         BottomItem(Screen.Home, "Home", Icons.Filled.Home),
@@ -106,34 +108,47 @@ fun FocusLockApp(viewModel: FocusViewModel) {
         BottomItem(Screen.Settings, "Settings", Icons.Filled.Settings)
     )
 
-    Scaffold(
-        bottomBar = {
-            val backStackEntry by navController.currentBackStackEntryAsState()
-            val currentDestination = backStackEntry?.destination
-            val topLevelRoutes = items.map { it.screen.route }.toSet()
-            if (currentDestination?.route in topLevelRoutes) {
-                NavigationBar {
-                    items.forEach { item ->
-                        val selected = currentDestination?.hierarchy?.any { it.route == item.screen.route } == true
-                        NavigationBarItem(
-                            selected = selected,
-                            onClick = {
-                                navController.navigate(item.screen.route) {
-                                    popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                                    launchSingleTop = true
-                                    restoreState = true
-                                }
-                            },
-                            icon = { Icon(item.icon, contentDescription = item.label) },
-                            label = { Text(item.label) }
-                        )
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(focusLockBackgroundBrush(darkTheme))
+    ) {
+        Scaffold(
+            containerColor = androidx.compose.ui.graphics.Color.Transparent,
+            bottomBar = {
+                val backStackEntry by navController.currentBackStackEntryAsState()
+                val currentDestination = backStackEntry?.destination
+                val topLevelRoutes = items.map { it.screen.route }.toSet()
+                if (currentDestination?.route in topLevelRoutes) {
+                    NavigationBar(
+                        containerColor = if (darkTheme)
+                            androidx.compose.ui.graphics.Color.White.copy(alpha = 0.06f)
+                        else
+                            androidx.compose.ui.graphics.Color.White.copy(alpha = 0.55f),
+                        tonalElevation = 0.dp
+                    ) {
+                        items.forEach { item ->
+                            val selected = currentDestination?.hierarchy?.any { it.route == item.screen.route } == true
+                            NavigationBarItem(
+                                selected = selected,
+                                onClick = {
+                                    navController.navigate(item.screen.route) {
+                                        popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                                        launchSingleTop = true
+                                        restoreState = true
+                                    }
+                                },
+                                icon = { Icon(item.icon, contentDescription = item.label) },
+                                label = { Text(item.label) }
+                            )
+                        }
                     }
                 }
             }
-        }
-    ) { padding ->
-        Box(modifier = Modifier.padding(padding)) {
-            FocusLockNavGraph(navController = navController, viewModel = viewModel)
+        ) { padding ->
+            Box(modifier = Modifier.padding(padding)) {
+                FocusLockNavGraph(navController = navController, viewModel = viewModel)
+            }
         }
     }
 }
