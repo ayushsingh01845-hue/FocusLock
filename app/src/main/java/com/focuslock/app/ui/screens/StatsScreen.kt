@@ -100,5 +100,23 @@ fun StatsScreen(navController: NavHostController, viewModel: FocusViewModel) {
                 Icon(Icons.Filled.ChevronRight, contentDescription = null)
             }
         }
+
+        Spacer(Modifier.height(12.dp))
+        Card(
+            onClick = { navController.navigate(Screen.ScreenTime.route) },
+            shape = RoundedCornerShape(16.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Row(
+                Modifier.padding(16.dp).fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(Modifier.weight(1f)) {
+                    Text("Screen Time", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                    Text("Your phone's overall usage, last 7 days", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                Icon(Icons.Filled.ChevronRight, contentDescription = null)
+            }
+        }
     }
 }
