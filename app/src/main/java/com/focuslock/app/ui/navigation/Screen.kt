@@ -10,4 +10,5 @@ sealed class Screen(val route: String) {
     data object AppSelection : Screen("app_selection")
     data object Permissions : Screen("permissions")
     data object History : Screen("history")
+    data object ScreenTime : Screen("screen_time")
 }
