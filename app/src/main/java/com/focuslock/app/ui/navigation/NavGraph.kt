@@ -18,5 +18,6 @@ fun FocusLockNavGraph(navController: NavHostController, viewModel: FocusViewMode
         composable(Screen.AppSelection.route) { AppSelectionScreen(navController, viewModel) }
         composable(Screen.Permissions.route) { PermissionsScreen(navController) }
         composable(Screen.History.route) { HistoryScreen(navController, viewModel) }
+        composable(Screen.ScreenTime.route) { ScreenTimeScreen(navController, viewModel) }
     }
 }
