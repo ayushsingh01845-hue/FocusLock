@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Text to Speech — Ayush Social</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Work+Sans:wght@400;500;600&family=Space+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0a0d12; --ink-2:#12161d; --ink-3:#1a1f29;
+    --pink:#ff3b3b; --cyan:#5eead4; --yellow:#ffd166; --purple:#b98dff;
+    --text:#eef2f6; --text-dim:#8a94a3;
+    --line:rgba(238,242,246,0.09);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; min-height:100vh;
+    background:var(--ink); color:var(--text);
+    font-family:'Work Sans',sans-serif;
+    padding-bottom:40px;
+  }
+  header{
+    display:flex; align-items:center; gap:10px;
+    padding:16px 18px;
+    border-bottom:1px solid var(--line);
+    position:sticky; top:0; background:var(--ink); z-index:5;
+  }
+  .brand-mark{
+    width:34px; height:34px; border-radius:10px; overflow:hidden;
+    background:linear-gradient(135deg,var(--pink),var(--purple));
+    display:flex; align-items:center; justify-content:center;
+  }
+  header b{font-family:'Bricolage Grotesque',sans-serif; font-size:15px;}
+  header span{display:block; font-family:'Space Mono',monospace; font-size:9.5px; color:var(--text-dim); letter-spacing:0.05em;}
+
+  main{max-width:480px; margin:0 auto; padding:20px 16px;}
+
+  textarea{
+    width:100%;
+    min-height:150px;
+    background:var(--ink-2);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:14px;
+    color:var(--text);
+    font-family:'Work Sans',sans-serif;
+    font-size:14px;
+    line-height:1.6;
+    resize:vertical;
+    margin-bottom:6px;
+  }
+  textarea:focus{outline:none; border-color:var(--cyan);}
+  .char-count{
+    text-align:right;
+    font-family:'Space Mono',monospace;
+    font-size:10.5px;
+    color:var(--text-dim);
+    margin-bottom:16px;
+  }
+
+  .control-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:14px;
+  }
+  .control-row label{font-size:12.5px; color:var(--text-dim);}
+  .control-row .val{font-family:'Space Mono',monospace; font-size:11.5px; color:var(--cyan);}
+  input[type="range"]{
+    width:100%;
+    accent-color:var(--pink);
+    margin-top:6px;
+  }
+  select{
+    width:100%;
+    background:var(--ink-2);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:12px;
+    color:var(--text);
+    font-family:'Work Sans',sans-serif;
+    font-size:13px;
+    margin-bottom:16px;
+  }
+
+  .btn-row{display:flex; gap:10px; margin-top:6px;}
+  button.action{
+    flex:1;
+    padding:14px;
+    border-radius:14px;
+    border:none;
+    font-family:'Bricolage Grotesque',sans-serif;
+    font-weight:700;
+    font-size:14px;
+    cursor:pointer;
+  }
+  .btn-primary{background:linear-gradient(135deg,var(--pink),var(--purple)); color:#0a0d12;}
+  .btn-primary:disabled{opacity:0.5;}
+  .btn-secondary{background:var(--ink-2); color:var(--text); border:1px solid var(--line) !important;}
+
+  .status-pill{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    font-family:'Space Mono',monospace;
+    font-size:11px;
+    color:var(--text-dim);
+    padding:8px 12px;
+    border-radius:999px;
+    background:var(--ink-2);
+    border:1px solid var(--line);
+    margin-bottom:16px;
+  }
+  .status-dot{width:7px;height:7px;border-radius:50%; background:var(--text-dim);}
+  .status-pill.speaking .status-dot{background:var(--pink); animation:pulse 1s ease-in-out infinite;}
+  @keyframes pulse{0%,100%{opacity:1;} 50%{opacity:0.3;}}
+
+  .hint{font-size:11px; color:var(--text-dim); text-align:center; margin-top:16px; line-height:1.5;}
+  .section-label{font-size:12px; color:var(--text-dim); margin-bottom:8px; letter-spacing:0.02em;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand-mark">
+    <img src="logo.png" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;">
+  </div>
+  <div>
+    <b>Text to Speech</b>
+    <span>FREE · RUNS ON YOUR DEVICE</span>
+  </div>
+</header>
+
+<main>
+  <div class="section-label">Your text</div>
+  <textarea id="textInput" placeholder="Paste or type anything here — a caption, a script, a message...">Hey! This is Ayush Social. Paste your own text here and tap Speak.</textarea>
+  <div class="char-count"><span id="charCount">0</span> characters</div>
+
+  <div class="section-label">Voice</div>
+  <select id="voiceSelect"></select>
+
+  <div class="control-row">
+    <label>Speed</label>
+    <span class="val" id="rateVal">1.0x</span>
+  </div>
+  <input type="range" id="rateSlider" min="0.5" max="2" step="0.1" value="1">
+
+  <div class="control-row" style="margin-top:16px;">
+    <label>Pitch</label>
+    <span class="val" id="pitchVal">1.0</span>
+  </div>
+  <input type="range" id="pitchSlider" min="0" max="2" step="0.1" value="1">
+
+  <div style="margin-top:20px;">
+    <div class="status-pill" id="statusPill"><div class="status-dot"></div><span id="statusText">Ready</span></div>
+  </div>
+
+  <div class="btn-row">
+    <button class="action btn-secondary" id="stopBtn">Stop</button>
+    <button class="action btn-primary" id="speakBtn">▶ Speak</button>
+  </div>
+
+  <div class="hint">Uses your device's built-in voices — available voices and quality depend on your phone or browser. No internet or sign-up needed.</div>
+</main>
+
+<script>
+const textInput = document.getElementById('textInput');
+const charCount = document.getElementById('charCount');
+const voiceSelect = document.getElementById('voiceSelect');
+const rateSlider = document.getElementById('rateSlider');
+const rateVal = document.getElementById('rateVal');
+const pitchSlider = document.getElementById('pitchSlider');
+const pitchVal = document.getElementById('pitchVal');
+const speakBtn = document.getElementById('speakBtn');
+const stopBtn = document.getElementById('stopBtn');
+const statusPill = document.getElementById('statusPill');
+const statusText = document.getElementById('statusText');
+
+const synth = window.speechSynthesis;
+let voices = [];
+
+function updateCharCount(){
+  charCount.textContent = textInput.value.length;
+}
+textInput.addEventListener('input', updateCharCount);
+updateCharCount();
+
+function populateVoices(){
+  voices = synth.getVoices();
+  if(!voices.length) return;
+  voiceSelect.innerHTML = '';
+  voices.forEach((v, i)=>{
+    const opt = document.createElement('option');
+    opt.value = i;
+    opt.textContent = v.name + ' (' + v.lang + ')';
+    voiceSelect.appendChild(opt);
+  });
+  // prefer an Indian English voice if available
+  const preferredIdx = voices.findIndex(v => /en-IN/i.test(v.lang));
+  if(preferredIdx >= 0) voiceSelect.value = preferredIdx;
+}
+
+if(!synth){
+  statusText.textContent = 'Not supported on this browser';
+  speakBtn.disabled = true;
+} else {
+  populateVoices();
+  if(synth.onvoiceschanged !== undefined){
+    synth.onvoiceschanged = populateVoices;
+  }
+}
+
+rateSlider.addEventListener('input', ()=>{
+  rateVal.textContent = parseFloat(rateSlider.value).toFixed(1) + 'x';
+});
+pitchSlider.addEventListener('input', ()=>{
+  pitchVal.textContent = parseFloat(pitchSlider.value).toFixed(1);
+});
+
+function setSpeaking(isSpeaking){
+  statusPill.classList.toggle('speaking', isSpeaking);
+  statusText.textContent = isSpeaking ? 'Speaking...' : 'Ready';
+  speakBtn.disabled = isSpeaking;
+}
+
+speakBtn.addEventListener('click', ()=>{
+  const text = textInput.value.trim();
+  if(!text || !synth) return;
+
+  synth.cancel();
+
+  const utterance = new SpeechSynthesisUtterance(text);
+  const chosenVoice = voices[voiceSelect.value];
+  if(chosenVoice) utterance.voice = chosenVoice;
+  utterance.rate = parseFloat(rateSlider.value);
+  utterance.pitch = parseFloat(pitchSlider.value);
+
+  utterance.onstart = ()=> setSpeaking(true);
+  utterance.onend = ()=> setSpeaking(false);
+  utterance.onerror = ()=> setSpeaking(false);
+
+  synth.speak(utterance);
+});
+
+stopBtn.addEventListener('click', ()=>{
+  if(synth) synth.cancel();
+  setSpeaking(false);
+});
+</script>
+</body>
+</html>

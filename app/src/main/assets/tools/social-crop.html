@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Social Crop Tool — Ayush Social</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0b0b14; --ink-2:#14121f;
+    --pink:#ff3b3b; --cyan:#5eead4; --yellow:#ffd166; --purple:#b98dff;
+    --text:#f3f1ff; --text-dim:#9a93b8;
+    --line:rgba(243,241,255,0.10);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; min-height:100vh;
+    background:var(--ink); color:var(--text);
+    font-family:'Inter',sans-serif;
+    padding-bottom:40px;
+  }
+  header{
+    display:flex; align-items:center; gap:10px;
+    padding:16px 18px;
+    border-bottom:1px solid var(--line);
+    position:sticky; top:0; background:var(--ink); z-index:5;
+  }
+  .brand-mark{
+    width:34px; height:34px; border-radius:10px; overflow:hidden;
+    background:linear-gradient(135deg,var(--cyan),var(--purple));
+    display:flex; align-items:center; justify-content:center;
+  }
+  header b{font-family:'Space Grotesk',sans-serif; font-size:15px;}
+  header span{display:block; font-family:'JetBrains Mono',monospace; font-size:9.5px; color:var(--text-dim); letter-spacing:0.05em;}
+
+  main{max-width:480px; margin:0 auto; padding:20px 16px;}
+
+  .upload-zone{
+    border:1.5px dashed var(--line);
+    border-radius:16px;
+    padding:36px 16px;
+    text-align:center;
+    cursor:pointer;
+    margin-bottom:18px;
+  }
+  .upload-zone svg{width:30px;height:30px;color:var(--text-dim); margin-bottom:10px;}
+  .upload-zone b{display:block; font-family:'Space Grotesk',sans-serif; font-size:14px;}
+  .upload-zone span{font-size:11.5px; color:var(--text-dim);}
+
+  .preset-row{
+    display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap;
+  }
+  .preset-btn{
+    flex:1; min-width:100px;
+    padding:10px 8px;
+    border-radius:12px;
+    border:1px solid var(--line);
+    background:var(--ink-2);
+    color:var(--text-dim);
+    font-family:'JetBrains Mono',monospace;
+    font-size:10.5px;
+    cursor:pointer;
+    text-align:center;
+  }
+  .preset-btn.active{
+    background:linear-gradient(135deg,var(--pink),var(--purple));
+    color:#0b0b14; font-weight:600; border-color:transparent;
+  }
+
+  .canvas-wrap{
+    position:relative;
+    width:100%;
+    background:#000;
+    border-radius:16px;
+    overflow:hidden;
+    border:1px solid var(--line);
+    margin-bottom:16px;
+    touch-action:none;
+  }
+  canvas{display:block; width:100%; height:auto;}
+
+  .zoom-row{
+    display:flex; align-items:center; gap:12px;
+    margin-bottom:18px;
+  }
+  .zoom-row span{font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--text-dim); width:44px;}
+  input[type=range]{flex:1; accent-color:var(--pink);}
+
+  .btn-row{display:flex; gap:10px;}
+  button.action{
+    flex:1;
+    padding:13px;
+    border-radius:14px;
+    border:none;
+    font-family:'Space Grotesk',sans-serif;
+    font-weight:700;
+    font-size:13px;
+    cursor:pointer;
+  }
+  .btn-primary{background:linear-gradient(135deg,var(--cyan),var(--purple)); color:#0b0b14;}
+  .btn-secondary{background:var(--ink-2); color:var(--text); border:1px solid var(--line) !important;}
+
+  .hint{font-size:11px; color:var(--text-dim); text-align:center; margin-top:14px; line-height:1.5;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand-mark">
+    <img src="logo.png" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;">
+  </div>
+  <div>
+    <b>Social Crop Tool</b>
+    <span>INSTAGRAM POST · STORY · REEL COVER</span>
+  </div>
+</header>
+
+<main>
+  <div class="upload-zone" id="uploadZone">
+    <svg viewBox="0 0 24 24" fill="none"><path d="M12 16V4M12 4l-4 4M12 4l4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+    <b>Tap to upload a photo</b>
+    <span>JPG or PNG</span>
+  </div>
+  <input type="file" id="fileInput" accept="image/*" style="display:none;">
+
+  <div class="preset-row">
+    <button class="preset-btn active" data-w="1080" data-h="1080">Post 1:1</button>
+    <button class="preset-btn" data-w="1080" data-h="1350">Portrait 4:5</button>
+    <button class="preset-btn" data-w="1080" data-h="1920">Story / Reel 9:16</button>
+  </div>
+
+  <div class="canvas-wrap" id="canvasWrap">
+    <canvas id="cvs"></canvas>
+  </div>
+
+  <div class="zoom-row">
+    <span>Zoom</span>
+    <input type="range" id="zoomSlider" min="100" max="400" value="100">
+  </div>
+
+  <div class="btn-row">
+    <button class="action btn-secondary" id="resetBtn">Reset</button>
+    <button class="action btn-primary" id="exportBtn">↓ Export PNG</button>
+  </div>
+
+  <div class="hint">Drag the photo to reposition it. Pinch or use the zoom slider. Export gives you the exact pixel size for the format you picked.</div>
+</main>
+
+<script>
+const cvs = document.getElementById('cvs');
+const ctx = cvs.getContext('2d');
+const uploadZone = document.getElementById('uploadZone');
+const fileInput = document.getElementById('fileInput');
+const zoomSlider = document.getElementById('zoomSlider');
+
+let img = null;
+let targetW = 1080, targetH = 1080;
+let scale = 1, minScale = 1;
+let offsetX = 0, offsetY = 0;
+let dragging = false, lastX = 0, lastY = 0;
+
+function setCanvasSize(){
+  cvs.width = targetW;
+  cvs.height = targetH;
+}
+
+function fitImage(){
+  if(!img) return;
+  const scaleX = targetW / img.width;
+  const scaleY = targetH / img.height;
+  minScale = Math.max(scaleX, scaleY);
+  scale = minScale;
+  offsetX = (targetW - img.width * scale) / 2;
+  offsetY = (targetH - img.height * scale) / 2;
+  zoomSlider.value = 100;
+  draw();
+}
+
+function draw(){
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, 0, targetW, targetH);
+  if(img){
+    ctx.drawImage(img, offsetX, offsetY, img.width * scale, img.height * scale);
+  }
+}
+
+function clampOffsets(){
+  const iw = img.width * scale, ih = img.height * scale;
+  offsetX = Math.min(0, Math.max(targetW - iw, offsetX));
+  offsetY = Math.min(0, Math.max(targetH - ih, offsetY));
+}
+
+uploadZone.addEventListener('click', ()=> fileInput.click());
+fileInput.addEventListener('change', (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev)=>{
+    const image = new Image();
+    image.onload = ()=>{
+      img = image;
+      setCanvasSize();
+      fitImage();
+    };
+    image.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+});
+
+document.querySelectorAll('.preset-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.preset-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    targetW = parseInt(btn.dataset.w, 10);
+    targetH = parseInt(btn.dataset.h, 10);
+    setCanvasSize();
+    if(img) fitImage(); else draw();
+  });
+});
+
+zoomSlider.addEventListener('input', ()=>{
+  if(!img) return;
+  const pct = parseInt(zoomSlider.value, 10) / 100;
+  const oldScale = scale;
+  scale = minScale * pct;
+  // keep the visual center stable while zooming
+  const cx = targetW / 2, cy = targetH / 2;
+  offsetX = cx - (cx - offsetX) * (scale / oldScale);
+  offsetY = cy - (cy - offsetY) * (scale / oldScale);
+  clampOffsets();
+  draw();
+});
+
+function getCanvasCoords(clientX, clientY){
+  const rect = cvs.getBoundingClientRect();
+  return {
+    x: (clientX - rect.left) * (targetW / rect.width),
+    y: (clientY - rect.top) * (targetH / rect.height)
+  };
+}
+
+cvs.addEventListener('pointerdown', (e)=>{
+  if(!img) return;
+  dragging = true;
+  lastX = e.clientX; lastY = e.clientY;
+  cvs.setPointerCapture(e.pointerId);
+});
+cvs.addEventListener('pointermove', (e)=>{
+  if(!dragging || !img) return;
+  const rect = cvs.getBoundingClientRect();
+  const dx = (e.clientX - lastX) * (targetW / rect.width);
+  const dy = (e.clientY - lastY) * (targetH / rect.height);
+  offsetX += dx; offsetY += dy;
+  clampOffsets();
+  lastX = e.clientX; lastY = e.clientY;
+  draw();
+});
+cvs.addEventListener('pointerup', ()=>{ dragging = false; });
+cvs.addEventListener('pointercancel', ()=>{ dragging = false; });
+
+document.getElementById('resetBtn').addEventListener('click', ()=>{
+  if(img) fitImage();
+});
+
+document.getElementById('exportBtn').addEventListener('click', ()=>{
+  if(!img){ alert('Upload a photo first'); return; }
+  cvs.toBlob((blob)=>{
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'social-crop-' + targetW + 'x' + targetH + '.png';
+    a.click();
+    URL.revokeObjectURL(url);
+  }, 'image/png');
+});
+
+setCanvasSize();
+draw();
+</script>
+</body>
+</html>
