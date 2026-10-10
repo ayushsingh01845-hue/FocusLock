@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>YouTube Comment Picker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&family=Work+Sans:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0a0d12; --pink:#ff3b3b; --cyan:#5eead4; --yellow:#ffd166; --purple:#b98dff;
+    --text:#f5f6f8; --text-dim:#9aa1ad; --line:#1d222b;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; min-height:100vh; background:var(--ink); color:var(--text);
+    font-family:'Work Sans',sans-serif; padding:20px 16px 60px;
+  }
+  .wrap{max-width:640px; margin:0 auto;}
+  .back{
+    display:inline-flex; align-items:center; gap:6px; color:var(--text-dim);
+    text-decoration:none; font-size:14px; margin-bottom:18px;
+  }
+  h1{
+    font-family:'Bricolage Grotesque',sans-serif; font-weight:800; font-size:26px;
+    margin:0 0 6px;
+  }
+  .sub{color:var(--text-dim); font-size:14px; margin:0 0 26px; line-height:1.5;}
+  .card{
+    background:#10141b; border:1px solid var(--line); border-radius:16px;
+    padding:20px; margin-bottom:16px;
+  }
+  label{display:block; font-size:13px; color:var(--text-dim); margin-bottom:6px; font-weight:500;}
+  input[type=text]{
+    width:100%; background:#0a0d12; border:1px solid var(--line); color:var(--text);
+    border-radius:10px; padding:12px 14px; font-size:14px; font-family:'Work Sans',sans-serif;
+    margin-bottom:16px;
+  }
+  input:focus{outline:none; border-color:var(--cyan);}
+  button{
+    width:100%; border:none; border-radius:12px; padding:14px; font-size:15px;
+    font-weight:600; font-family:'Work Sans',sans-serif; cursor:pointer;
+  }
+  .btn-primary{background:var(--pink); color:#fff;}
+  .btn-primary:disabled{opacity:.5;}
+  .btn-secondary{background:var(--purple); color:#fff; margin-top:10px;}
+  .btn-secondary:disabled{opacity:.5;}
+  .status{
+    font-size:13px; color:var(--text-dim); text-align:center; margin-top:12px; min-height:18px;
+  }
+  .status.err{color:var(--pink);}
+  .status.ok{color:var(--cyan);}
+  .count-pill{
+    display:inline-block; background:#0a0d12; border:1px solid var(--line); color:var(--cyan);
+    font-family:'Space Mono',monospace; font-size:13px; padding:6px 14px; border-radius:999px;
+    margin-bottom:16px;
+  }
+  .winner{
+    display:none; background:linear-gradient(160deg,#1a0e18,#10141b);
+    border:1px solid var(--pink); border-radius:16px; padding:22px; margin-top:6px;
+    animation:pop .3s ease;
+  }
+  .winner.show{display:block;}
+  @keyframes pop{from{transform:scale(.92); opacity:0;} to{transform:scale(1); opacity:1;}}
+  .winner-tag{
+    font-family:'Bricolage Grotesque',sans-serif; font-weight:800; font-size:12px;
+    letter-spacing:.08em; text-transform:uppercase; color:var(--pink); margin-bottom:12px;
+  }
+  .w-top{display:flex; align-items:center; gap:12px; margin-bottom:14px;}
+  .w-avatar{width:44px; height:44px; border-radius:50%; object-fit:cover; flex-shrink:0; background:var(--line);}
+  .w-name{font-weight:600; font-size:15px;}
+  .w-likes{font-size:12px; color:var(--text-dim); font-family:'Space Mono',monospace;}
+  .w-text{font-size:15px; line-height:1.6; white-space:pre-wrap; word-break:break-word;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="index.html">&larr; Back</a>
+  <h1>YouTube Comment Picker</h1>
+  <p class="sub">Paste a YouTube video link and pick a random winner from the comments &mdash; perfect for giveaways.</p>
+
+  <div class="card">
+    <label for="videoUrl">YouTube video link</label>
+    <input type="text" id="videoUrl" placeholder="https://youtube.com/watch?v=...">
+
+    <label for="filterWord">Only include comments containing (optional)</label>
+    <input type="text" id="filterWord" placeholder="e.g. giveaway, entered, #contest">
+
+    <button class="btn-primary" id="fetchBtn">Fetch Comments</button>
+    <div class="status" id="fetchStatus"></div>
+  </div>
+
+  <div class="card" id="pickCard" style="display:none;">
+    <div class="count-pill" id="countPill">0 comments loaded</div>
+    <button class="btn-secondary" id="pickBtn">Pick Random Winner</button>
+  </div>
+
+  <div class="winner" id="winnerCard">
+    <div class="winner-tag">Winner</div>
+    <div class="w-top">
+      <img class="w-avatar" id="wAvatar" src="" alt="">
+      <div>
+        <div class="w-name" id="wName"></div>
+        <div class="w-likes" id="wLikes"></div>
+      </div>
+    </div>
+    <div class="w-text" id="wText"></div>
+  </div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+let allComments = [];
+
+const PROXY_URL = 'https://crimson-resonance-b977ayush-cricket-proxy.ayushjibabuaan07.workers.dev/';
+
+function extractVideoId(input) {
+  input = input.trim();
+  const patterns = [
+    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/shorts\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/,
+  ];
+  for (const p of patterns) {
+    const m = input.match(p);
+    if (m) return m[1];
+  }
+  if (/^[a-zA-Z0-9_-]{11}$/.test(input)) return input;
+  return null;
+}
+
+async function fetchAllComments(videoId, statusEl) {
+  let comments = [];
+  let pageToken = '';
+  let pages = 0;
+  const MAX_PAGES = 10; // up to ~1000 comments
+
+  while (pages < MAX_PAGES) {
+    let url = PROXY_URL + '?action=ytcomments&videoId=' + encodeURIComponent(videoId);
+    if (pageToken) url += '&pageToken=' + encodeURIComponent(pageToken);
+
+    const resp = await fetch(url);
+    const data = await resp.json();
+
+    if (data.error) {
+      throw new Error(data.error);
+    }
+
+    if (data.items) {
+      comments = comments.concat(data.items);
+    }
+
+    pages++;
+    statusEl.textContent = `Loading... ${comments.length} comments so far`;
+
+    if (data.nextPageToken) {
+      pageToken = data.nextPageToken;
+    } else {
+      break;
+    }
+  }
+  return comments;
+}
+
+$('fetchBtn').addEventListener('click', async () => {
+  const videoUrl = $('videoUrl').value.trim();
+  const statusEl = $('fetchStatus');
+  const pickCard = $('pickCard');
+  const winnerCard = $('winnerCard');
+
+  winnerCard.classList.remove('show');
+  pickCard.style.display = 'none';
+  allComments = [];
+
+  const videoId = extractVideoId(videoUrl);
+  if (!videoId) {
+    statusEl.textContent = "Couldn't read that as a YouTube link.";
+    statusEl.className = 'status err';
+    return;
+  }
+
+  $('fetchBtn').disabled = true;
+  statusEl.textContent = 'Loading...';
+  statusEl.className = 'status';
+
+  try {
+    let comments = await fetchAllComments(videoId, statusEl);
+
+    const filterWord = $('filterWord').value.trim().toLowerCase();
+    if (filterWord) {
+      comments = comments.filter(c => c.text.toLowerCase().includes(filterWord));
+    }
+
+    allComments = comments;
+
+    if (comments.length === 0) {
+      statusEl.textContent = 'No matching comments found.';
+      statusEl.className = 'status err';
+    } else {
+      statusEl.textContent = `Loaded ${comments.length} comments successfully.`;
+      statusEl.className = 'status ok';
+      $('countPill').textContent = `${comments.length} comments loaded`;
+      pickCard.style.display = 'block';
+    }
+  } catch (err) {
+    statusEl.textContent = 'Error: ' + err.message + ' (comments may be turned off on this video)';
+    statusEl.className = 'status err';
+  } finally {
+    $('fetchBtn').disabled = false;
+  }
+});
+
+$('pickBtn').addEventListener('click', () => {
+  if (!allComments.length) return;
+  const winner = allComments[Math.floor(Math.random() * allComments.length)];
+  $('wAvatar').src = winner.avatar;
+  $('wName').textContent = winner.name;
+  $('wLikes').textContent = `${winner.likes} likes`;
+  $('wText').textContent = winner.text;
+  const wc = $('winnerCard');
+  wc.classList.remove('show');
+  void wc.offsetWidth;
+  wc.classList.add('show');
+  wc.scrollIntoView({ behavior: 'smooth', block: 'center' });
+});
+</script>
+</body>
+</html>

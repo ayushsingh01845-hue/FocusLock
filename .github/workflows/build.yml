@@ -1,0 +1,54 @@
+name: Build FocusLock APK
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew || true
+
+      - name: Generate Gradle wrapper jar if missing
+        run: |
+          if [ ! -f gradle/wrapper/gradle-wrapper.jar ]; then
+            sudo apt-get update && sudo apt-get install -y gradle
+            gradle wrapper --gradle-version 8.7
+          fi
+
+      - name: Download brand fonts (Anton, Space Mono) - keeps bundled fallback if offline
+        run: |
+          F=app/src/main/res/font
+          B=https://github.com/google/fonts/raw/main/ofl
+          get() { curl -fsSL --retry 3 -o /tmp/dl.ttf "$B/$1" && [ -s /tmp/dl.ttf ] && mv /tmp/dl.ttf "$F/$2" || echo "font $1 skipped"; }
+          get anton/Anton-Regular.ttf anton.ttf
+          get spacemono/SpaceMono-Regular.ttf space_mono_regular.ttf
+          get spacemono/SpaceMono-Bold.ttf space_mono_bold.ttf
+
+      - name: Point Gradle to the runner's preinstalled Android SDK
+        run: |
+          echo "sdk.dir=$ANDROID_HOME" > local.properties
+          echo "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}" >> local.properties
+
+      - name: Accept SDK licenses (just in case)
+        run: yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
+
+      - name: Build debug APK
+        run: ./gradlew assembleDebug --no-daemon
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: FocusLock-debug-apk
+          path: app/build/outputs/apk/debug/app-debug.apk

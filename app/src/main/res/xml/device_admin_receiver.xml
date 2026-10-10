@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<device-admin xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-policies>
+        <!-- Intentionally empty - no special device policies are requested. Being an active
+             admin at all is what makes Android require an extra step before uninstalling. -->
+    </uses-policies>
+</device-admin>
