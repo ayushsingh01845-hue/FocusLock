@@ -1,0 +1,2 @@
+-keep class com.focuslock.app.data.** { *; }
+-keepattributes *Annotation*
