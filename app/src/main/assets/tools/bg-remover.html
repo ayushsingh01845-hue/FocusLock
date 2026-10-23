@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Background Remover — Ayush Social</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700;800&family=Manrope:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#100c1e; --ink-2:#1b1530;
+    --pink:#ff3b3b; --cyan:#5eead4; --yellow:#ffd166; --purple:#b98dff;
+    --text:#f5f2ff; --text-dim:#938cad;
+    --line:rgba(245,242,255,0.09);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; min-height:100vh;
+    background:var(--ink); color:var(--text);
+    font-family:'Manrope',sans-serif;
+    padding-bottom:40px;
+  }
+  header{
+    display:flex; align-items:center; gap:10px;
+    padding:16px 18px;
+    border-bottom:1px solid var(--line);
+    position:sticky; top:0; background:var(--ink); z-index:5;
+  }
+  .brand-mark{
+    width:34px; height:34px; border-radius:10px; overflow:hidden;
+    background:linear-gradient(135deg,var(--pink),var(--purple));
+    display:flex; align-items:center; justify-content:center;
+  }
+  header b{font-family:'Space Grotesk',sans-serif; font-size:15px;}
+  header span{display:block; font-family:'JetBrains Mono',monospace; font-size:9.5px; color:var(--text-dim); letter-spacing:0.05em;}
+
+  main{max-width:480px; margin:0 auto; padding:20px 16px;}
+
+  .upload-zone{
+    border:1.5px dashed var(--line);
+    border-radius:16px;
+    padding:36px 16px;
+    text-align:center;
+    cursor:pointer;
+    margin-bottom:18px;
+  }
+  .upload-zone svg{width:30px;height:30px;color:var(--text-dim); margin-bottom:10px;}
+  .upload-zone b{display:block; font-family:'Space Grotesk',sans-serif; font-size:14px;}
+  .upload-zone span{font-size:11.5px; color:var(--text-dim);}
+
+  .stage{
+    position:relative;
+    width:100%;
+    border-radius:16px;
+    overflow:hidden;
+    border:1px solid var(--line);
+    margin-bottom:16px;
+    display:none;
+    background:
+      linear-gradient(45deg, #241c3d 25%, transparent 25%) 0 0/20px 20px,
+      linear-gradient(-45deg, #241c3d 25%, transparent 25%) 0 0/20px 20px,
+      linear-gradient(45deg, transparent 75%, #241c3d 75%) 0 0/20px 20px,
+      linear-gradient(-45deg, transparent 75%, #241c3d 75%) 0 0/20px 20px,
+      var(--ink-2);
+  }
+  .stage.ready{display:block;}
+  canvas{display:block; width:100%; height:auto;}
+
+  .status-row{
+    display:flex; align-items:center; gap:10px;
+    padding:12px 14px;
+    border-radius:12px;
+    background:var(--ink-2);
+    border:1px solid var(--line);
+    font-size:12px;
+    color:var(--text-dim);
+    margin-bottom:16px;
+    display:none;
+  }
+  .status-row.visible{display:flex;}
+  .spin{
+    width:14px;height:14px;
+    border-radius:50%;
+    border:2px solid var(--line);
+    border-top-color:var(--pink);
+    animation:spin 0.8s linear infinite;
+    flex-shrink:0;
+  }
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  .bg-row{
+    display:flex; gap:8px; margin-bottom:16px;
+  }
+  .bg-swatch{
+    width:38px; height:38px;
+    border-radius:10px;
+    border:2px solid var(--line);
+    cursor:pointer;
+    flex-shrink:0;
+  }
+  .bg-swatch.active{border-color:var(--pink);}
+  .bg-swatch.transparent{
+    background:
+      linear-gradient(45deg, #333 25%, transparent 25%) 0 0/10px 10px,
+      linear-gradient(-45deg, #333 25%, transparent 25%) 0 0/10px 10px,
+      linear-gradient(45deg, transparent 75%, #333 75%) 0 0/10px 10px,
+      linear-gradient(-45deg, transparent 75%, #333 75%) 0 0/10px 10px, #fff;
+  }
+
+  .btn-row{display:flex; gap:10px;}
+  button.action{
+    flex:1;
+    padding:13px;
+    border-radius:14px;
+    border:none;
+    font-family:'Space Grotesk',sans-serif;
+    font-weight:700;
+    font-size:13px;
+    cursor:pointer;
+  }
+  .btn-primary{background:linear-gradient(135deg,var(--pink),var(--purple)); color:#0b0b14;}
+  .btn-primary:disabled{opacity:0.5;}
+  .btn-secondary{background:var(--ink-2); color:var(--text); border:1px solid var(--line) !important;}
+
+  .hint{font-size:11px; color:var(--text-dim); text-align:center; margin-top:14px; line-height:1.5;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand-mark">
+    <img src="logo.png" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;">
+  </div>
+  <div>
+    <b>Background Remover</b>
+    <span>AI · RUNS IN YOUR BROWSER</span>
+  </div>
+</header>
+
+<main>
+  <div class="upload-zone" id="uploadZone">
+    <svg viewBox="0 0 24 24" fill="none"><path d="M12 16V4M12 4l-4 4M12 4l4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+    <b>Tap to upload a photo</b>
+    <span>Works best with a clear subject (person, product, pet)</span>
+  </div>
+  <input type="file" id="fileInput" accept="image/*" style="display:none;">
+
+  <div class="status-row" id="statusRow">
+    <div class="spin"></div>
+    <span id="statusText">Loading AI model...</span>
+  </div>
+
+  <div class="stage" id="stage">
+    <canvas id="cvs"></canvas>
+  </div>
+
+  <div class="bg-row" id="bgRow" style="display:none;">
+    <div class="bg-swatch transparent active" data-bg="transparent" title="Transparent"></div>
+    <div class="bg-swatch" data-bg="#ffffff" style="background:#ffffff;" title="White"></div>
+    <div class="bg-swatch" data-bg="#100c1e" style="background:#100c1e;" title="Black"></div>
+    <div class="bg-swatch" data-bg="#ff2ec4" style="background:#ff2ec4;" title="Pink"></div>
+    <div class="bg-swatch" data-bg="#37e6b0" style="background:#37e6b0;" title="Teal"></div>
+  </div>
+
+  <div class="btn-row">
+    <button class="action btn-secondary" id="resetBtn" style="display:none;">Reset</button>
+    <button class="action btn-primary" id="downloadBtn" style="display:none;">↓ Download PNG</button>
+  </div>
+
+  <div class="hint">This runs a free Google AI model right in your browser — no photo is uploaded to any server. First load may take a few seconds while the model downloads.</div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation@0.1/selfie_segmentation.js"></script>
+<script>
+const uploadZone = document.getElementById('uploadZone');
+const fileInput = document.getElementById('fileInput');
+const statusRow = document.getElementById('statusRow');
+const statusText = document.getElementById('statusText');
+const stage = document.getElementById('stage');
+const cvs = document.getElementById('cvs');
+const ctx = cvs.getContext('2d');
+const bgRow = document.getElementById('bgRow');
+const downloadBtn = document.getElementById('downloadBtn');
+const resetBtn = document.getElementById('resetBtn');
+
+let currentImage = null;
+let currentMaskCanvas = null;
+let currentBg = 'transparent';
+let segmenter = null;
+let modelReady = false;
+
+function setStatus(text, show){
+  statusText.textContent = text;
+  statusRow.classList.toggle('visible', !!show);
+}
+
+function initSegmenter(){
+  segmenter = new SelfieSegmentation({
+    locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation@0.1/${file}`
+  });
+  segmenter.setOptions({ modelSelection: 1 });
+  segmenter.onResults(onResults);
+  segmenter.initialize().then(()=>{
+    modelReady = true;
+  }).catch(()=>{
+    setStatus('Could not load the AI model. Check your internet connection and reload.', true);
+  });
+}
+initSegmenter();
+
+function onResults(results){
+  currentImage = results.image;
+  currentMaskCanvas = results.segmentationMask;
+
+  cvs.width = results.image.width;
+  cvs.height = results.image.height;
+  drawComposite();
+
+  setStatus('', false);
+  stage.classList.add('ready');
+  bgRow.style.display = 'flex';
+  downloadBtn.style.display = 'block';
+  resetBtn.style.display = 'block';
+}
+
+function drawComposite(){
+  if(!currentImage || !currentMaskCanvas) return;
+  ctx.save();
+  ctx.clearRect(0, 0, cvs.width, cvs.height);
+
+  if(currentBg !== 'transparent'){
+    ctx.fillStyle = currentBg;
+    ctx.fillRect(0, 0, cvs.width, cvs.height);
+  }
+
+  // draw the subject, masked by the segmentation result
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.drawImage(currentMaskCanvas, 0, 0, cvs.width, cvs.height);
+  ctx.globalCompositeOperation = 'source-in';
+  ctx.drawImage(currentImage, 0, 0, cvs.width, cvs.height);
+
+  if(currentBg !== 'transparent'){
+    ctx.globalCompositeOperation = 'destination-over';
+    ctx.fillStyle = currentBg;
+    ctx.fillRect(0, 0, cvs.width, cvs.height);
+  }
+
+  ctx.restore();
+}
+
+uploadZone.addEventListener('click', ()=> fileInput.click());
+fileInput.addEventListener('change', async (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+
+  if(!modelReady){
+    setStatus('Still loading the AI model, please wait...', true);
+  } else {
+    setStatus('Removing background...', true);
+  }
+
+  const reader = new FileReader();
+  reader.onload = (ev)=>{
+    const img = new Image();
+    img.onload = async ()=>{
+      // wait for the model if it hasn't finished loading yet
+      let waited = 0;
+      while(!modelReady && waited < 15000){
+        await new Promise(r => setTimeout(r, 300));
+        waited += 300;
+      }
+      if(!modelReady){
+        setStatus('AI model took too long to load. Check your connection and try again.', true);
+        return;
+      }
+      setStatus('Removing background...', true);
+      await segmenter.send({ image: img });
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+});
+
+document.querySelectorAll('.bg-swatch').forEach(sw=>{
+  sw.addEventListener('click', ()=>{
+    document.querySelectorAll('.bg-swatch').forEach(s=>s.classList.remove('active'));
+    sw.classList.add('active');
+    currentBg = sw.dataset.bg;
+    drawComposite();
+  });
+});
+
+resetBtn.addEventListener('click', ()=>{
+  stage.classList.remove('ready');
+  bgRow.style.display = 'none';
+  downloadBtn.style.display = 'none';
+  resetBtn.style.display = 'none';
+  currentImage = null;
+  currentMaskCanvas = null;
+  fileInput.value = '';
+});
+
+downloadBtn.addEventListener('click', ()=>{
+  cvs.toBlob((blob)=>{
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'background-removed.png';
+    a.click();
+    URL.revokeObjectURL(url);
+  }, 'image/png');
+});
+</script>
+</body>
+</html>

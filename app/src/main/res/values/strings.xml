@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Ayush Focus</string>
+    <string name="accessibility_service_description">Ayush Focus uses this to detect when you open an app you asked to have blocked during a focus session. If you turn on Guard, it also looks for YouTube Shorts, Reels and websites you chose to block. Nothing is read or sent anywhere else.</string>
+    <string name="widget_description">Today\'s focus time and your streak</string>
+</resources>
